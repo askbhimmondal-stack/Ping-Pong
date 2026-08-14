@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#090d16">
+<title>Ping Pong — Premium Arcade</title>
+<style>
+:root{
+  --bg:#070a11;--panel:#0e1420;--line:#263044;--text:#f5f7fb;
+  --muted:#8e99ad;--accent:#7c5cff;--accent2:#22d3ee;--good:#52e0a5;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:
+radial-gradient(circle at 50% -10%,#17223b 0,#0a0e17 38%,#05070c 100%);color:var(--text)}
+body{display:flex;justify-content:center;padding:24px}
+.app{width:min(1050px,100%);display:flex;flex-direction:column;gap:16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 8px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;box-shadow:0 8px 30px #7c5cff33}
+.logo:before{content:"";width:17px;height:17px;border:3px solid white;border-radius:50%}
+h1{font-size:20px;letter-spacing:-.5px;margin:0}
+.sub{font-size:12px;color:var(--muted);margin-top:2px}
+.controls{display:flex;gap:8px}
+button{border:1px solid var(--line);background:#111827;color:var(--text);border-radius:11px;padding:10px 13px;font-weight:700;cursor:pointer;transition:.18s}
+button:hover{transform:translateY(-1px);border-color:#45516a;background:#172033}
+.primary{border:0;background:linear-gradient(135deg,var(--accent),#6045dc);box-shadow:0 7px 22px #7c5cff2d}
+.game-card{position:relative;background:linear-gradient(180deg,#0d1420,#090e17);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:0 25px 70px #0008;overflow:hidden}
+.game-wrap{position:relative;width:100%;aspect-ratio:16/9;min-height:320px;background:#070b12;border-radius:15px;overflow:hidden;border:1px solid #202a3a;touch-action:none}
+canvas{width:100%;height:100%;display:block}
+.hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:center;pointer-events:none;padding:15px}
+.score{display:flex;align-items:center;gap:25px;background:#080c14cc;border:1px solid #ffffff14;backdrop-filter:blur(10px);padding:9px 18px;border-radius:14px}
+.score .num{font-size:30px;line-height:1;font-weight:850;letter-spacing:-1px}
+.score .dash{color:#59657a}
+.player-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:3px}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#05081099;backdrop-filter:blur(4px);transition:.2s}
+.overlay.hidden{opacity:0;pointer-events:none}
+.modal{text-align:center;padding:28px 34px;border:1px solid #ffffff18;background:#0c1320e8;border-radius:20px;box-shadow:0 20px 60px #0008}
+.modal h2{margin:0 0 7px;font-size:28px}
+.modal p{margin:0 0 18px;color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#0d1420;border:1px solid var(--line);border-radius:14px;padding:13px}
+.stat b{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}
+.tip{color:var(--muted);font-size:12px;text-align:center;padding:2px}
+footer{text-align:center;color:#8e99ad;font-size:12px;padding:4px 0 8px}
+footer span{color:#ff5c7a;font-size:14px}
+@media(max-width:650px){
+ body{padding:10px}.app{gap:10px}.topbar{padding-bottom:3px}.controls button{padding:9px 10px}
+ .game-card{padding:8px;border-radius:17px}.game-wrap{aspect-ratio:3/4;min-height:520px}
+ .score{gap:18px;padding:8px 14px}.score .num{font-size:25px}
+ .stats{gap:7px}.stat{padding:10px 6px}.stat b{font-size:16px}
+ .tip{font-size:11px}
+}
+
+.login-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;
+background:radial-gradient(circle at 50% 20%,#17223b 0,#080c14 45%,#04060a 100%)}
+.login-screen.hidden{display:none}
+.login-card{width:min(390px,100%);padding:32px;background:#0d1420ee;border:1px solid #263044;
+border-radius:24px;box-shadow:0 30px 90px #000b;backdrop-filter:blur(18px)}
+.login-brand{display:flex;justify-content:center;margin-bottom:18px}
+.login-title{text-align:center;font-size:26px;font-weight:850;margin:0}
+.login-sub{text-align:center;color:var(--muted);font-size:13px;margin:7px 0 25px}
+.login-label{display:block;font-size:11px;color:#aeb8c9;text-transform:uppercase;letter-spacing:1px;margin:0 0 7px}
+.login-input{width:100%;padding:13px 14px;margin-bottom:15px;border:1px solid #293449;border-radius:12px;
+background:#080d16;color:white;outline:none;font-size:14px}
+.login-input:focus{border-color:#7c5cff;box-shadow:0 0 0 3px #7c5cff18}
+.login-btn{width:100%;padding:13px;border:0;border-radius:12px;color:white;font-weight:800;
+background:linear-gradient(135deg,var(--accent),#6045dc);cursor:pointer}
+.login-error{text-align:center;color:#ff7188;font-size:12px;min-height:18px;margin-top:12px}
+.login-footer{text-align:center;color:#68748a;font-size:11px;margin-top:20px}
+.logout{display:none}
+</style>
+</head>
+<body>
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand"><div class="logo"></div></div>
+    <h2 class="login-title">Welcome Back</h2>
+    <p class="login-sub">Sign in to access Ping Pong</p>
+    <form id="loginForm">
+      <label class="login-label" for="loginUser">Admin</label>
+      <input class="login-input" id="loginUser" autocomplete="username" placeholder="Enter admin name" required>
+      <label class="login-label" for="loginPass">Password</label>
+      <input class="login-input" id="loginPass" type="password" autocomplete="current-password" placeholder="Enter password" required>
+      <button class="login-btn" type="submit">Log In</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+    <div class="login-footer">Made in ❤ for Neelam</div>
+  </div>
+</div>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div><h1>Ping Pong</h1><div class="sub">Premium Arcade • First to 7</div></div>
+    </div>
+    <div class="controls">
+      <button id="pauseBtn">Pause</button>
+      <button class="primary" id="newBtn">New Game</button>
+    </div>
+  </header>
+
+  <section class="game-card">
+    <div class="game-wrap" id="gameWrap">
+      <canvas id="game"></canvas>
+      <div class="hud">
+        <div class="score">
+          <div><div class="player-label">You</div><div class="num" id="youScore">0</div></div>
+          <div class="dash">:</div>
+          <div><div class="player-label">CPU</div><div class="num" id="cpuScore">0</div></div>
+        </div>
+      </div>
+      <div class="overlay" id="overlay">
+        <div class="modal">
+          <h2 id="overlayTitle">Ready?</h2>
+          <p id="overlayText">Move your mouse, finger, or use W/S.</p>
+          <button class="primary" id="startBtn">Start Match</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat"><b id="speedStat">Normal</b><span>Difficulty</span></div>
+    <div class="stat"><b id="rallyStat">0</b><span>Best Rally</span></div>
+    <div class="stat"><b id="statusStat">Ready</b><span>Status</span></div>
+  </div>
+  <div class="tip">Desktop: mouse / W S &nbsp;•&nbsp; Mobile: drag anywhere on the court</div>
+<footer>Made in <span>❤</span> for Neelam</footer>
+</div>
+
+<script>
+const canvas=document.getElementById('game'), ctx=canvas.getContext('2d');
+const wrap=document.getElementById('gameWrap');
+const youEl=document.getElementById('youScore'), cpuEl=document.getElementById('cpuScore');
+const overlay=document.getElementById('overlay'), overlayTitle=document.getElementById('overlayTitle');
+const overlayText=document.getElementById('overlayText'), startBtn=document.getElementById('startBtn');
+const pauseBtn=document.getElementById('pauseBtn'), newBtn=document.getElementById('newBtn');
+const rallyEl=document.getElementById('rallyStat'), statusEl=document.getElementById('statusStat');
+
+let W=900,H=506,dpr=1,playing=false,paused=false,raf=0,last=0;
+let you=0,cpu=0,rally=0,bestRally=0,keys={};
+const p={x:35,y:H/2-48,w:12,h:96,speed:560};
+const ai={x:W-47,y:H/2-48,w:12,h:96,speed:410};
+const ball={x:W/2,y:H/2,r:7,vx:0,vy:0,speed:440};
+
+function resize(){
+ dpr=Math.min(devicePixelRatio||1,2);
+ const r=wrap.getBoundingClientRect(); W=r.width; H=r.height;
+ canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+ p.x=20;p.w=Math.max(9,W*.014);p.h=Math.max(68,H*.19);
+ ai.x=W-20-ai.w;ai.w=p.w;ai.h=p.h;
+ if(!playing) resetBall(Math.random()>.5?1:-1);
+}
+new ResizeObserver(resize).observe(wrap); resize();
+
+function resetBall(dir){
+ ball.x=W/2;ball.y=H/2;
+ const angle=(Math.random()*.9-.45);
+ ball.speed=Math.max(360,Math.min(600,W*.58));
+ ball.vx=dir*ball.speed*Math.cos(angle);
+ ball.vy=ball.speed*Math.sin(angle);
+ rally=0;rallyEl.textContent=bestRally;
+}
+function resetMatch(){
+ you=cpu=0;youEl.textContent=0;cpuEl.textContent=0;
+ p.y=H/2-p.h/2;ai.y=p.y;playing=false;paused=false;
+ pauseBtn.textContent='Pause';statusEl.textContent='Ready';
+ overlayTitle.textContent='Ready?';overlayText.textContent='Move your mouse, finger, or use W/S.';
+ startBtn.textContent='Start Match';overlay.classList.remove('hidden');resetBall(1);
+}
+function start(){
+ playing=true;paused=false;overlay.classList.add('hidden');pauseBtn.textContent='Pause';statusEl.textContent='Playing';
+ last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+}
+function end(winner){
+ playing=false;statusEl.textContent=winner==='you'?'Victory':'CPU Wins';
+ overlayTitle.textContent=winner==='you'?'You Win!':'Game Over';
+ overlayText.textContent=winner==='you'?'Great match. Ready for another?':'The CPU takes this round. Try again.';
+ startBtn.textContent='Play Again';overlay.classList.remove('hidden');
+}
+function score(winner){
+ if(winner==='you'){you++;youEl.textContent=you}else{cpu++;cpuEl.textContent=cpu}
+ if(you>=7||cpu>=7){end(you>=7?'you':'cpu');return}
+ resetBall(winner==='you'?-1:1);
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function update(dt){
+ if(keys.w||keys.ArrowUp)p.y-=p.speed*dt;
+ if(keys.s||keys.ArrowDown)p.y+=p.speed*dt;
+ p.y=clamp(p.y,8,H-p.h-8);
+ const target=ball.y-ai.h/2;
+ const difficulty=Math.min(1,Math.max(.35,Math.abs(ball.vx)/700));
+ ai.y += clamp(target-ai.y,-ai.speed*dt*(.75+difficulty*.35),ai.speed*dt*(.75+difficulty*.35));
+ ai.y=clamp(ai.y,8,H-ai.h-8);
+
+ ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
+ if(ball.y-ball.r<5){ball.y=5+ball.r;ball.vy=Math.abs(ball.vy)}
+ if(ball.y+ball.r>H-5){ball.y=H-5-ball.r;ball.vy=-Math.abs(ball.vy)}
+
+ const hit=(a,dir)=>ball.x+ball.r>a.x&&ball.x-ball.r<a.x+a.w&&ball.y+ball.r>a.y&&ball.y-ball.r<a.y+a.h&&((dir>0&&ball.vx<0)||(dir<0&&ball.vx>0));
+ if(hit(p,1)){
+   const rel=(ball.y-(p.y+p.h/2))/(p.h/2);
+   const angle=rel*1.05; ball.speed=Math.min(820,Math.hypot(ball.vx,ball.vy)*1.045+8);
+   ball.vx=ball.speed*Math.cos(angle);ball.vy=ball.speed*Math.sin(angle);ball.x=p.x+p.w+ball.r;
+   rally++;bestRally=Math.max(bestRally,rally);rallyEl.textContent=bestRally;
+ }
+ if(hit(ai,-1)){
+   const rel=(ball.y-(ai.y+ai.h/2))/(ai.h/2);
+   const angle=Math.PI-rel*1.05; ball.speed=Math.min(820,Math.hypot(ball.vx,ball.vy)*1.045+8);
+   ball.vx=ball.speed*Math.cos(angle);ball.vy=ball.speed*Math.sin(angle);ball.x=ai.x-ball.r;
+   rally++;bestRally=Math.max(bestRally,rally);rallyEl.textContent=bestRally;
+ }
+ if(ball.x<-30)score('cpu');
+ if(ball.x>W+30)score('you');
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0a101b');bg.addColorStop(1,'#060910');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ ctx.strokeStyle='#ffffff10';ctx.lineWidth=1;
+ for(let y=0;y<H;y+=36){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ ctx.setLineDash([8,11]);ctx.strokeStyle='#ffffff24';ctx.beginPath();ctx.moveTo(W/2,15);ctx.lineTo(W/2,H-15);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle='#ffffff0b';ctx.beginPath();ctx.arc(W/2,H/2,Math.min(W,H)*.15,0,Math.PI*2);ctx.fill();
+
+ paddle(p,'#8b7cff');paddle(ai,'#22d3ee');
+ ctx.shadowBlur=22;ctx.shadowColor='#ffffffaa';ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+}
+function paddle(a,c){
+ const g=ctx.createLinearGradient(a.x,a.y,a.x+a.w,a.y);g.addColorStop(0,c);g.addColorStop(1,'#fff');
+ ctx.fillStyle=g;ctx.shadowBlur=18;ctx.shadowColor=c+'66';roundRect(a.x,a.y,a.w,a.h,7);ctx.fill();ctx.shadowBlur=0;
+}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function loop(t){
+ if(!playing)return; if(!paused){const dt=Math.min((t-last)/1000,.025);update(dt);draw()} last=t;raf=requestAnimationFrame(loop);
+}
+function pointerY(e){
+ const r=canvas.getBoundingClientRect();const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+ p.y=clamp(y-p.h/2,8,H-p.h-8);
+}
+canvas.addEventListener('mousemove',pointerY);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();pointerY(e)},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();pointerY(e)},{passive:false});
+addEventListener('keydown',e=>{keys[e.key]=true;if(e.key===' '){e.preventDefault();togglePause()}});
+addEventListener('keyup',e=>keys[e.key]=false);
+function togglePause(){
+ if(!playing)return;
+ paused=!paused;pauseBtn.textContent=paused?'Resume':'Pause';statusEl.textContent=paused?'Paused':'Playing';
+ if(paused){overlayTitle.textContent='Paused';overlayText.textContent='Take a breath and continue when ready.';startBtn.textContent='Resume';overlay.classList.remove('hidden')}
+ else overlay.classList.add('hidden');
+}
+pauseBtn.onclick=togglePause;
+newBtn.onclick=resetMatch;
+startBtn.onclick=()=>paused?togglePause():start();
+resetMatch();draw();
+
+const loginScreen=document.getElementById('loginScreen');
+const loginForm=document.getElementById('loginForm');
+const loginUser=document.getElementById('loginUser');
+const loginPass=document.getElementById('loginPass');
+const loginError=document.getElementById('loginError');
+
+loginForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(loginUser.value.trim()==='Neelam' && loginPass.value==='Neelam143'){
+    loginScreen.classList.add('hidden');
+    loginError.textContent='';
+    loginForm.reset();
+  }else{
+    loginError.textContent='Invalid Admin or Password';
+    loginPass.select();
+  }
+});
+</script>
+</body>
+</html>
